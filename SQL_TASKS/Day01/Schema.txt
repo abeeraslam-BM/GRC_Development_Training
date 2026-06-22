@@ -1,0 +1,87 @@
+CREATE DATABASE IF NOT EXISTS abc_inc;
+USE abc_inc;
+
+DROP TABLE IF EXISTS ProjectAssignments;
+DROP TABLE IF EXISTS Salaries;
+DROP TABLE IF EXISTS Projects;
+DROP TABLE IF EXISTS Employees;
+DROP TABLE IF EXISTS Departments;
+
+CREATE TABLE Departments
+(
+    DepartmentId INT AUTO_INCREMENT PRIMARY KEY,
+    DepartmentName VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Employees
+(
+    EmployeeId INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    DepartmentId INT NULL,
+    ManagerId INT NULL,
+    HireDate DATE NOT NULL,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    FOREIGN KEY (DepartmentId) REFERENCES Departments(DepartmentId),
+    FOREIGN KEY (ManagerId) REFERENCES Employees(EmployeeId)
+);
+
+CREATE TABLE Salaries
+(
+    SalaryId INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeId INT NOT NULL,
+    SalaryAmount DECIMAL(12,2) NOT NULL,
+    SalaryType VARCHAR(10) NOT NULL,
+    FOREIGN KEY (EmployeeId) REFERENCES Employees(EmployeeId)
+);
+
+CREATE TABLE Projects
+(
+    ProjectId INT AUTO_INCREMENT PRIMARY KEY,
+    ProjectName VARCHAR(100) NOT NULL,
+    StartDate DATE NOT NULL
+);
+
+CREATE TABLE ProjectAssignments
+(
+    AssignmentId INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeId INT NOT NULL,
+    ProjectId INT NOT NULL,
+    HoursLogged DECIMAL(8,2) NOT NULL DEFAULT 0,
+    FOREIGN KEY (EmployeeId) REFERENCES Employees(EmployeeId),
+    FOREIGN KEY (ProjectId) REFERENCES Projects(ProjectId)
+);
+
+INSERT INTO Departments (DepartmentName) VALUES
+('Engineering'),
+('Sales'),
+('Human Resources'),
+('Marketing'),
+('Finance');
+
+INSERT INTO Employees (FirstName, LastName, DepartmentId, ManagerId, HireDate, IsActive) VALUES
+('Wasif', 'Khan', 1, NULL, '2019-03-01', 1),
+('Hina', 'Tariq', 1, 1, '2020-06-15', 1),
+('Bilal', 'Sheikh', 2, 1, '2021-01-10', 1),
+('Ali', 'Raza', 1, 2, '2022-09-01', 1),
+('Sara', 'Ahmed', 3, 1, '2024-02-20', 1);
+
+INSERT INTO Salaries (EmployeeId, SalaryAmount, SalaryType) VALUES
+(1, 12000.00, 'Monthly'),
+(2, 9500.00, 'Monthly'),
+(3, 8000.00, 'Monthly'),
+(4, 84000.00, 'Annual');
+
+INSERT INTO Projects (ProjectName, StartDate) VALUES
+('Phoenix Platform Rebuild', '2023-01-15'),
+('Client Portal Revamp', '2023-05-01'),
+('Q1 Sales Campaign', '2024-01-01'),
+('Internal HR System', '2024-03-10');
+
+INSERT INTO ProjectAssignments (EmployeeId, ProjectId, HoursLogged) VALUES
+(1, 1, 120.00),
+(2, 1, 95.50),
+(3, 3, 60.00),
+(1, 2, 40.00),
+(5, 4, 30.00),
+(2, 2, 55.00);

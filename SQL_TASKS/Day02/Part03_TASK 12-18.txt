@@ -1,0 +1,356 @@
+-- TASK 12
+-- DELIMITER $$
+
+-- CREATE FUNCTION fn_customer_lifetime_value(p_customer_id INT)
+-- RETURNS DECIMAL(12,2)
+-- DETERMINISTIC
+-- BEGIN
+--     DECLARE total_spent DECIMAL(12,2);
+
+--     SELECT COALESCE(SUM(p.Amount), 0) INTO total_spent
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     WHERE o.CustomerID = p_customer_id AND p.PaymentStatus = 'Paid';
+
+--     RETURN total_spent;
+-- END$$
+
+-- DELIMITER ;
+
+-- SELECT fn_customer_lifetime_value(1) AS CustomerLifetimeValue;
+
+
+-- TASK 13
+-- DELIMITER $$
+
+-- CREATE FUNCTION fn_order_discount(p_order_id INT)
+-- RETURNS DECIMAL(12,2)
+-- DETERMINISTIC
+-- BEGIN
+--     DECLARE order_total DECIMAL(12,2);
+--     DECLARE discounted_total DECIMAL(12,2);
+
+--     SELECT COALESCE(SUM(Quantity * UnitPrice), 0)
+--     INTO order_total
+--     FROM OrderItems
+--     WHERE OrderID = p_order_id;
+
+--     IF order_total > 10000 THEN SET discounted_total = order_total * 0.90;
+--     ELSEIF order_total > 5000 THEN SET discounted_total = order_total * 0.95;
+--     ELSE SET discounted_total = order_total;
+--     END IF;
+
+--     RETURN discounted_total;
+-- END$$
+
+-- DELIMITER ;
+
+
+-- TASK 14
+-- DELIMITER $$
+
+-- CREATE PROCEDURE sp_orders_by_date_range(
+--     IN p_start_date DATE,
+--     IN p_end_date DATE
+-- )
+-- BEGIN
+--     SELECT DATE_FORMAT(o.OrderDate, '%Y-%m') AS SnapshotMonth, o.OrderID, CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName, o.OrderDate,
+--         SUM(oi.Quantity) AS TotalItems, SUM(oi.Quantity * oi.UnitPrice) AS OrderTotal
+--     FROM Orders o
+--     JOIN Customers c ON o.CustomerID = c.CustomerID
+--     JOIN OrderItems oi ON o.OrderID = oi.OrderID
+--     WHERE DATE(o.OrderDate) BETWEEN p_start_date AND p_end_date
+--     GROUP BY SnapshotMonth, o.OrderID, CustomerName, o.OrderDate
+--     ORDER BY
+--     SnapshotMonth,
+--     o.OrderID;
+-- END$$
+
+-- DELIMITER ;
+
+-- CALL sp_orders_by_date_range('2026-01-01', '2026-12-31');
+
+
+-- TASK 15
+-- DELIMITER $$
+
+-- CREATE PROCEDURE sp_place_order(
+--     IN p_customer_id INT,
+
+--     IN p_product1_id INT,
+--     IN p_quantity1 INT,
+
+--     IN p_product2_id INT,
+--     IN p_quantity2 INT,
+
+--     IN p_product3_id INT,
+--     IN p_quantity3 INT
+-- )
+-- BEGIN
+--     DECLARE v_order_id INT;
+--     DECLARE v_total_amount DECIMAL(12,2);
+
+--     DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--     BEGIN
+--         ROLLBACK;
+--         SELECT 'Order failed. Transaction rolled back.' AS Message;
+--     END;
+
+--     START TRANSACTION;
+
+--     -- 1. Creating order
+--     INSERT INTO Orders (CustomerID, OrderDate, OrderStatus)
+--     VALUES (p_customer_id, NOW(), 'Pending');
+
+--     SET v_order_id = LAST_INSERT_ID();
+
+--     -- 2. Inserting order items
+--     INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice)
+--     SELECT v_order_id, ProductID, p_quantity1, UnitPrice
+--     FROM Products
+--     WHERE ProductID = p_product1_id;
+
+--     INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice)
+--     SELECT v_order_id, ProductID, p_quantity2, UnitPrice
+--     FROM Products
+--     WHERE ProductID = p_product2_id;
+
+--     INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice)
+--     SELECT v_order_id, ProductID, p_quantity3, UnitPrice
+--     FROM Products
+--     WHERE ProductID = p_product3_id;
+
+--     -- 3. Deduct stock
+--     UPDATE Products
+--     SET StockQuantity = StockQuantity - p_quantity1
+--     WHERE ProductID = p_product1_id;
+
+--     UPDATE Products
+--     SET StockQuantity = StockQuantity - p_quantity2
+--     WHERE ProductID = p_product2_id;
+
+--     UPDATE Products
+--     SET StockQuantity = StockQuantity - p_quantity3
+--     WHERE ProductID = p_product3_id;
+
+--     -- Calculate total
+--     SELECT SUM(Quantity * UnitPrice)
+--     INTO v_total_amount
+--     FROM OrderItems
+--     WHERE OrderID = v_order_id;
+
+--     -- 4. Record pending payment
+--     INSERT INTO Payments (OrderID, PaymentDate, Amount, PaymentStatus, PaymentMethod)
+--     VALUES (v_order_id, NULL, v_total_amount, 'Pending', NULL);
+
+--     COMMIT;
+
+--     SELECT 
+--         'Order placed successfully.' AS Message,
+--         v_order_id AS OrderID,
+--         v_total_amount AS TotalAmount;
+-- END$$
+
+-- DELIMITER ; 
+
+-- CALL sp_place_order(
+--     1,
+--     1, 1,
+--     7, 2,
+--     4, 1
+-- );
+
+
+-- TASK 16
+-- DELIMITER $$
+
+-- CREATE PROCEDURE sp_monthly_sales_report(
+--     IN p_year INT,
+--     IN p_month INT,
+--     OUT p_total_orders INT,
+--     OUT p_total_revenue DECIMAL(12,2)
+-- )
+-- BEGIN
+--     -- Total orders
+--     SELECT COUNT(DISTINCT o.OrderID)
+--     INTO p_total_orders
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     WHERE YEAR(o.OrderDate) = p_year AND MONTH(o.OrderDate) = p_month AND p.PaymentStatus = 'Paid';
+
+--     -- Total revenue
+--     SELECT COALESCE(SUM(p.Amount), 0)
+--     INTO p_total_revenue
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     WHERE YEAR(o.OrderDate) = p_year AND MONTH(o.OrderDate) = p_month AND p.PaymentStatus = 'Paid';
+
+--     -- Top 5 products by units sold
+--     SELECT pr.ProductName, SUM(oi.Quantity) AS UnitsSold
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     JOIN OrderItems oi ON o.OrderID = oi.OrderID
+--     JOIN Products pr ON oi.ProductID = pr.ProductID
+--     WHERE YEAR(o.OrderDate) = p_year AND MONTH(o.OrderDate) = p_month AND p.PaymentStatus = 'Paid'
+--     GROUP BY pr.ProductID, pr.ProductName
+--     ORDER BY UnitsSold DESC
+--     LIMIT 5;
+
+--     -- Top 3 customers by spending
+--     SELECT CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName, SUM(p.Amount) AS TotalSpent
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     JOIN Customers c ON o.CustomerID = c.CustomerID
+--     WHERE YEAR(o.OrderDate) = p_year AND MONTH(o.OrderDate) = p_month AND p.PaymentStatus = 'Paid'
+--     GROUP BY c.CustomerID, c.FirstName, c.LastName
+--     ORDER BY TotalSpent DESC
+--     LIMIT 3;
+-- END$$
+
+-- DELIMITER ;
+
+-- CALL sp_monthly_sales_report(2026, 1, @total_orders, @total_revenue);
+
+
+
+
+
+-- TASK 17
+-- DELIMITER $$
+
+-- CREATE PROCEDURE sp_generate_restock_alerts()
+-- BEGIN
+--     DECLARE done INT DEFAULT FALSE;
+
+--     DECLARE v_product_id INT;
+--     DECLARE v_product_name VARCHAR(150);
+--     DECLARE v_stock INT;
+
+--     DECLARE product_cursor CURSOR FOR
+--         SELECT ProductID, ProductName, StockQuantity
+--         FROM Products
+--         WHERE StockQuantity < 10;
+
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND
+--         SET done = TRUE;
+
+--     OPEN product_cursor;
+
+--     read_loop: LOOP
+
+--         FETCH product_cursor
+--         INTO v_product_id, v_product_name, v_stock;
+
+--         IF done THEN
+--             LEAVE read_loop;
+--         END IF;
+
+--         INSERT INTO RestockAlerts (
+--             ProductID,
+--             ProductName,
+--             CurrentStock,
+--             AlertDate
+--         )
+--         VALUES (
+--             v_product_id,
+--             v_product_name,
+--             v_stock,
+--             NOW()
+--         );
+
+--     END LOOP;
+
+--     CLOSE product_cursor;
+-- END$$
+
+-- DELIMITER ;
+
+
+
+-- CALL sp_generate_restock_alerts();
+-- SELECT * FROM RestockAlerts;
+
+
+
+--TASK 18
+-- DELIMITER $$
+
+-- CREATE PROCEDURE sp_populate_monthly_sales_audit()
+-- BEGIN
+--     DECLARE done INT DEFAULT FALSE;
+
+--     DECLARE v_report_year INT;
+--     DECLARE v_report_month INT;
+
+--     DECLARE v_total_orders INT;
+--     DECLARE v_total_revenue DECIMAL(12,2);
+
+--     DECLARE month_cursor CURSOR FOR
+--         SELECT
+--             YEAR(month_date) AS ReportYear,
+--             MONTH(month_date) AS ReportMonth
+--         FROM (
+--             SELECT DATE_SUB(CURDATE(), INTERVAL 0 MONTH) AS month_date
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 7 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 8 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 9 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 10 MONTH)
+--             UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
+--         ) months;
+
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND
+--         SET done = TRUE;
+
+--     OPEN month_cursor;
+
+--     read_loop: LOOP
+
+--         FETCH month_cursor
+--         INTO v_report_year, v_report_month;
+
+--         IF done THEN
+--             LEAVE read_loop;
+--         END IF;
+
+--         CALL sp_monthly_sales_report(
+--             v_report_year,
+--             v_report_month,
+--             v_total_orders,
+--             v_total_revenue
+--         );
+
+--         INSERT INTO MonthlySalesAudit (
+--             ReportYear,
+--             ReportMonth,
+--             TotalOrders,
+--             TotalRevenue,
+--             AuditDate
+--         )
+--         VALUES (
+--             v_report_year,
+--             v_report_month,
+--             v_total_orders,
+--             v_total_revenue,
+--             NOW()
+--         );
+
+--     END LOOP;
+
+--     CLOSE month_cursor;
+-- END$$
+
+-- DELIMITER ;
+
+
+-- CALL sp_populate_monthly_sales_audit();
+
+-- SELECT * FROM MonthlySalesAudit ORDER BY ReportYear, ReportMonth;
+
+-- SELECT ReportYear, ReportMonth, TotalOrders, TotalRevenue 
+-- FROM MonthlySalesAudit ORDER BY TotalRevenue DESC LIMIT 1;

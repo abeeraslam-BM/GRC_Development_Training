@@ -1,0 +1,71 @@
+-- CREATE TABLE Customers (
+--     CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+--     FirstName VARCHAR(50) NOT NULL,
+--     LastName VARCHAR(50) NOT NULL,
+--     Email VARCHAR(100) UNIQUE NOT NULL,
+--     Phone VARCHAR(20),
+--     RegistrationDate DATE NOT NULL,
+--     State VARCHAR(20) DEFAULT 'Active'
+-- );
+-- CREATE TABLE Categories (
+--     CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+--     CategoryName VARCHAR(100) NOT NULL,
+--     ParentCategoryID INT NULL,
+--     CONSTRAINT FK_Categories_Parent FOREIGN KEY (ParentCategoryID) REFERENCES Categories(CategoryID)
+-- );
+
+-- CREATE TABLE Products (
+--     ProductID INT AUTO_INCREMENT PRIMARY KEY,
+--     ProductName VARCHAR(150) NOT NULL,
+--     CategoryID INT NOT NULL,
+--     UnitPrice DECIMAL(12,2) NOT NULL,
+--     StockQuantity INT NOT NULL,
+--     CreatedDate DATE DEFAULT (CURRENT_DATE),
+--     CONSTRAINT FK_Products_Category FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID)
+-- );
+
+-- CREATE TABLE Orders (
+--     OrderID INT AUTO_INCREMENT PRIMARY KEY,
+--     CustomerID INT NOT NULL,
+--     OrderDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     OrderStatus VARCHAR(20) DEFAULT 'Pending',
+--     CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+-- );
+
+-- CREATE TABLE OrderItems (
+--     OrderItemID INT AUTO_INCREMENT PRIMARY KEY,
+--     OrderID INT NOT NULL,
+--     ProductID INT NOT NULL,
+--     Quantity INT NOT NULL,
+--     UnitPrice DECIMAL(12,2) NOT NULL,
+--     CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+--     CONSTRAINT FK_OrderItems_Products FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+-- );
+
+-- CREATE TABLE Payments (
+--     PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+--     OrderID INT NOT NULL,
+--     PaymentDate DATETIME NULL,
+--     Amount DECIMAL(12,2) NOT NULL,
+--     PaymentStatus VARCHAR(20) NOT NULL,
+--     PaymentMethod VARCHAR(30),
+--     CONSTRAINT FK_Payments_Orders FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+-- );
+
+-- CREATE TABLE RestockAlerts (
+--     AlertID INT AUTO_INCREMENT PRIMARY KEY,
+--     ProductID INT NOT NULL,
+--     ProductName VARCHAR(150),
+--     CurrentStock INT,
+--     AlertDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT FK_RestockAlerts_Product FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+-- );
+
+-- CREATE TABLE MonthlySalesAudit (
+--     AuditID INT AUTO_INCREMENT PRIMARY KEY,
+--     ReportYear INT,
+--     ReportMonth INT,
+--     TotalOrders INT,
+--     TotalRevenue DECIMAL(12,2),
+--     AuditDate DATETIME DEFAULT CURRENT_TIMESTAMP
+-- );

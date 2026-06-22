@@ -1,0 +1,84 @@
+-- TASK 8
+-- WITH FirstOrders AS (
+--     SELECT
+--         CustomerID,
+--         MIN(OrderDate) AS FirstOrderDate
+--     FROM Orders
+--     GROUP BY CustomerID
+-- )
+-- SELECT c.CustomerID, CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName, c.RegistrationDate, fo.FirstOrderDate,
+-- 	   DATEDIFF(fo.FirstOrderDate, c.RegistrationDate) AS GapInDays
+-- FROM Customers c
+-- JOIN FirstOrders fo ON c.CustomerID = fo.CustomerID
+-- WHERE DATEDIFF(fo.FirstOrderDate, c.RegistrationDate) <= 7;
+
+
+-- TASK 9
+-- WITH RECURSIVE CategoryHierarchy AS (
+--     
+--     SELECT CategoryID, CategoryName, ParentCategoryID, 
+--     CAST(CategoryName AS CHAR(500)) AS FullPath
+--     FROM Categories
+--     WHERE ParentCategoryID IS NULL
+
+--     UNION ALL
+
+--     SELECT c.CategoryID, c.CategoryName, c.ParentCategoryID, 
+--     CONCAT(ch.FullPath, ' > ', c.CategoryName) AS FullPath
+--     FROM Categories c
+--     JOIN CategoryHierarchy ch ON c.ParentCategoryID = ch.CategoryID
+-- )
+
+-- SELECT CategoryID, CategoryName, ParentCategoryID, FullPath
+-- FROM CategoryHierarchy
+-- ORDER BY FullPath;
+
+
+-- TASK 10
+-- CREATE OR REPLACE VIEW vw_customer_order_summary AS
+-- SELECT
+--     c.CustomerID,
+--     CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName,
+--     COUNT(DISTINCT o.OrderID) AS TotalOrders,
+--     COALESCE(SUM(p.Amount), 0) AS TotalAmountSpent,
+--     MAX(o.OrderDate) AS MostRecentOrderDate
+-- FROM Customers c
+-- LEFT JOIN Orders o ON c.CustomerID = o.CustomerID
+-- LEFT JOIN Payments p ON o.OrderID = p.OrderID AND p.PaymentStatus = 'Paid'
+-- GROUP BY c.CustomerID;
+
+-- SELECT CustomerID, CustomerName, TotalOrders, TotalAmountSpent, MostRecentOrderDate
+-- FROM vw_customer_order_summary
+-- ORDER BY TotalAmountSpent DESC
+-- LIMIT 10;
+
+-- TASK 11
+-- EXPLAIN
+-- SELECT p.ProductID, p.ProductName, COUNT(DISTINCT o.CustomerID) AS DistinctCustomers, SUM(oi.Quantity) AS TotalUnitsSold, SUM(oi.Quantity * oi.UnitPrice) AS TotalRevenue
+-- FROM Products p
+-- INNER JOIN OrderItems oi ON p.ProductID = oi.ProductID
+-- INNER JOIN Orders o ON oi.OrderID = o.OrderID
+-- INNER JOIN Payments pay ON o.OrderID = pay.OrderID
+-- WHERE pay.PaymentStatus = 'Paid'
+-- GROUP BY p.ProductID, p.ProductName
+-- ORDER BY TotalRevenue DESC;
+
+-- CREATE INDEX idx_orderitems_product
+-- ON OrderItems(ProductID);
+
+-- CREATE INDEX idx_orderitems_order
+-- ON OrderItems(OrderID);
+
+-- CREATE INDEX idx_payments_order_status
+-- ON Payments(OrderID, PaymentStatus);
+
+-- EXPLAIN
+-- SELECT p.ProductID, p.ProductName, COUNT(DISTINCT o.CustomerID) AS DistinctCustomers, SUM(oi.Quantity) AS TotalUnitsSold, SUM(oi.Quantity * oi.UnitPrice) AS TotalRevenue
+-- FROM Products p
+-- INNER JOIN OrderItems oi ON p.ProductID = oi.ProductID
+-- INNER JOIN Orders o ON oi.OrderID = o.OrderID
+-- INNER JOIN Payments pay ON o.OrderID = pay.OrderID
+-- WHERE pay.PaymentStatus = 'Paid'
+-- GROUP BY p.ProductID, p.ProductName
+-- ORDER BY TotalRevenue DESC;
+

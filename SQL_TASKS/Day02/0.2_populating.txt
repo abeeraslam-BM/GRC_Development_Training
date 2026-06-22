@@ -1,0 +1,138 @@
+-- CUSTOMERS
+-- INSERT INTO Customers 
+-- (FirstName, LastName, Email, Phone, RegistrationDate, State)
+-- VALUES
+-- ('Ali', 'Khan', 'ali.khan@email.com', '03001234567', '2025-01-05', 'Active'),
+-- ('Sara', 'Ahmed', 'sara.ahmed@email.com', '03011234567', '2025-01-10', 'Active'),
+-- ('Usman', 'Malik', 'usman.malik@email.com', '03021234567', '2025-02-01', 'Active'),
+-- ('Ayesha', 'Raza', 'ayesha.raza@email.com', '03031234567', '2025-02-15', 'Active'),
+-- ('Hamza', 'Sheikh', 'hamza.sheikh@email.com', '03041234567', '2025-03-01', 'Active'),
+-- ('Zara', 'Iqbal', 'zara.iqbal@email.com', '03051234567', '2025-03-10', 'Active'),
+-- ('Bilal', 'Hussain', 'bilal.hussain@email.com', '03061234567', '2025-04-01', 'Active'),
+-- ('Maha', 'Noor', 'maha.noor@email.com', '03071234567', '2025-04-15', 'Active');
+
+-- CATEGORIES
+-- INSERT INTO Categories (CategoryName, ParentCategoryID)
+-- VALUES
+-- ('Electronics', NULL),
+-- ('Mobiles', 1),
+-- ('Smartphones', 2),
+-- ('Home Appliances', NULL),
+-- ('Kitchen Appliances', 4),
+-- ('Fashion', NULL),
+-- ('Men Clothing', 6),
+-- ('Women Clothing', 6);
+
+-- PRODUCTS
+-- INSERT INTO Products 
+-- (ProductName, CategoryID, UnitPrice, StockQuantity)
+-- VALUES
+-- ('iPhone 14', 3, 250000.00, 15),
+-- ('Samsung Galaxy S23', 3, 220000.00, 20),
+-- ('Infinix Note 30', 3, 55000.00, 30),
+-- ('Blender', 5, 12000.00, 8),
+-- ('Microwave Oven', 5, 35000.00, 12),
+-- ('Air Fryer', 5, 28000.00, 7),
+-- ('Men T-Shirt', 7, 2500.00, 50),
+-- ('Men Jeans', 7, 6000.00, 25),
+-- ('Women Dress', 8, 8500.00, 18),
+-- ('Women Handbag', 8, 15000.00, 10);
+
+-- ORDERS
+-- INSERT INTO Orders 
+-- (CustomerID, OrderDate, OrderStatus)
+-- VALUES
+-- (1, '2025-06-01 10:30:00', 'Completed'),
+-- (1, '2025-07-05 14:20:00', 'Completed'),
+-- (1, '2025-08-10 09:15:00', 'Completed'),
+-- (1, '2025-09-12 16:45:00', 'Pending'),
+
+-- (2, '2025-06-15 11:00:00', 'Completed'),
+-- (2, '2025-07-20 13:30:00', 'Completed'),
+
+-- (3, '2025-08-01 12:10:00', 'Pending'),
+-- (3, '2025-09-01 15:00:00', 'Completed'),
+-- (3, '2025-10-01 17:30:00', 'Completed'),
+-- (3, '2025-11-01 18:45:00', 'Failed'),
+
+-- (4, '2025-11-10 10:00:00', 'Completed'),
+-- (5, '2025-12-01 14:00:00', 'Completed'),
+-- (6, '2026-01-05 09:30:00', 'Pending'),
+-- (7, '2026-02-10 11:45:00', 'Completed');
+
+-- ORDER ITEMS
+-- INSERT INTO OrderItems 
+-- (OrderID, ProductID, Quantity, UnitPrice)
+-- VALUES
+-- (1, 1, 1, 250000.00),
+-- (1, 7, 2, 2500.00),
+
+-- (2, 2, 1, 220000.00),
+-- (2, 8, 1, 6000.00),
+
+-- (3, 4, 1, 12000.00),
+-- (3, 5, 1, 35000.00),
+
+-- (4, 9, 2, 8500.00),
+
+-- (5, 3, 1, 55000.00),
+-- (5, 7, 3, 2500.00),
+
+-- (6, 6, 1, 28000.00),
+
+-- (7, 10, 1, 15000.00),
+
+-- (8, 1, 1, 250000.00),
+-- (8, 4, 1, 12000.00),
+
+-- (9, 2, 1, 220000.00),
+-- (9, 9, 1, 8500.00),
+
+-- (10, 8, 2, 6000.00),
+
+-- (11, 5, 1, 35000.00),
+-- (11, 7, 2, 2500.00),
+
+-- (12, 6, 1, 28000.00),
+-- (12, 10, 1, 15000.00),
+
+-- (13, 3, 1, 55000.00),
+
+-- (14, 9, 1, 8500.00),
+-- (14, 10, 1, 15000.00);
+
+-- PAYMENTS
+-- INSERT INTO Payments 
+-- (OrderID, PaymentDate, Amount, PaymentStatus, PaymentMethod)
+-- VALUES
+-- (1, '2025-06-01 10:40:00', 255000.00, 'Paid', 'Card'),
+-- (2, '2025-07-05 14:40:00', 226000.00, 'Paid', 'Bank Transfer'),
+-- (3, '2025-08-11 09:00:00', 47000.00, 'Paid', 'Cash on Delivery'),
+-- (4, NULL, 17000.00, 'Pending', NULL),
+
+-- (5, '2025-06-15 11:20:00', 62500.00, 'Paid', 'Card'),
+-- (6, '2025-07-20 14:00:00', 28000.00, 'Paid', 'Cash on Delivery'),
+
+-- (7, NULL, 15000.00, 'Pending', NULL),
+-- (8, '2025-09-01 15:30:00', 262000.00, 'Paid', 'Card'),
+-- (9, '2025-10-02 10:00:00', 228500.00, 'Paid', 'Bank Transfer'),
+-- (10, NULL, 12000.00, 'Failed', NULL),
+
+-- (11, '2025-11-10 10:15:00', 40000.00, 'Paid', 'Card'),
+-- (12, '2025-12-01 14:20:00', 43000.00, 'Paid', 'Cash on Delivery'),
+-- (13, NULL, 55000.00, 'Pending', NULL),
+-- (14, '2026-02-10 12:10:00', 23500.00, 'Paid', 'Card');
+
+
+
+
+-- FOr task 8
+-- INSERT INTO Customers
+-- (FirstName, LastName, Email, Phone, RegistrationDate, State)
+-- VALUES
+-- ('Test', 'Customer', 'test.customer@email.com', '03111111111', '2026-06-01', 'Active');
+
+-- INSERT INTO Orders
+-- (CustomerID, OrderDate, OrderStatus)
+-- VALUES
+-- (LAST_INSERT_ID(), '2026-06-05 10:00:00', 'Completed');

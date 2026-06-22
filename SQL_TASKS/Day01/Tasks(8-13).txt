@@ -1,0 +1,217 @@
+USE abc_inc;
+
+DROP FUNCTION IF EXISTS fn_get_emp_tenure;
+
+DELIMITER //
+CREATE FUNCTION fn_get_emp_tenure (p_EmployeeId INT)
+RETURNS INT
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_HireDate DATE;
+    DECLARE v_Years INT;
+
+    SELECT HireDate INTO v_HireDate FROM Employees WHERE EmployeeId = p_EmployeeId;
+
+    SET v_Years = TIMESTAMPDIFF(YEAR, v_HireDate, CURDATE());
+
+    RETURN v_Years;
+END //
+
+DELIMITER ;
+
+SELECT
+    FirstName,
+    LastName,
+    HireDate,
+    fn_get_emp_tenure(EmployeeId) AS YearsWorked
+FROM Employees;
+
+
+
+-- Task 09
+DROP FUNCTION IF EXISTS fn_annual_salary;
+
+DELIMITER //
+
+CREATE FUNCTION fn_annual_salary (p_EmployeeId INT)
+RETURNS DECIMAL(12,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_Amount DECIMAL(12,2);
+    DECLARE v_Type VARCHAR(10);
+    DECLARE v_AnnualSalary DECIMAL(12,2);
+
+    SELECT SalaryAmount, SalaryType
+    INTO v_Amount, v_Type
+    FROM Salaries
+    WHERE EmployeeId = p_EmployeeId
+    LIMIT 1;
+
+    IF v_Amount IS NULL THEN
+        SET v_AnnualSalary = 0;
+    ELSEIF v_Type = 'Monthly' THEN
+        SET v_AnnualSalary = v_Amount * 12;
+    ELSE
+        SET v_AnnualSalary = v_Amount;
+    END IF;
+
+    RETURN v_AnnualSalary;
+END //
+
+DELIMITER ;
+
+SELECT
+    FirstName,
+    LastName,
+    fn_annual_salary(EmployeeId) AS AnnualSalary
+FROM Employees;
+
+
+DROP PROCEDURE IF EXISTS sp_dept_employees;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_dept_employees (IN p_DepartmentId INT)
+BEGIN
+    SELECT
+        e.EmployeeId,
+        e.FirstName,
+        e.LastName,
+        fn_annual_salary(e.EmployeeId) AS AnnualSalary,
+        fn_get_emp_tenure(e.EmployeeId) AS YearsWorked
+    FROM Employees e
+    WHERE e.DepartmentId = p_DepartmentId;
+END //
+
+DELIMITER ;
+
+CALL sp_dept_employees(1);
+
+
+DROP PROCEDURE IF EXISTS sp_dept_salary_report;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_dept_salary_report (
+    IN p_DepartmentId INT,
+    OUT p_EmployeeCount INT,
+    OUT p_TotalSalary DECIMAL(14,2),
+    OUT p_AverageSalary DECIMAL(14,2),
+    OUT p_HighestEarnerName VARCHAR(101)
+)
+BEGIN
+    SELECT
+        e.FirstName,
+        e.LastName,
+        fn_annual_salary(e.EmployeeId) AS AnnualSalary
+    FROM Employees e
+    WHERE e.DepartmentId = p_DepartmentId;
+
+    SELECT COUNT(*)
+    INTO p_EmployeeCount
+    FROM Employees
+    WHERE DepartmentId = p_DepartmentId;
+
+    SELECT
+        SUM(fn_annual_salary(EmployeeId)),
+        AVG(fn_annual_salary(EmployeeId))
+    INTO p_TotalSalary, p_AverageSalary
+    FROM Employees
+    WHERE DepartmentId = p_DepartmentId;
+
+    SELECT CONCAT(FirstName, ' ', LastName)
+    INTO p_HighestEarnerName
+    FROM Employees
+    WHERE DepartmentId = p_DepartmentId
+    ORDER BY fn_annual_salary(EmployeeId) DESC
+    LIMIT 1;
+END //
+
+DELIMITER ;
+
+CALL sp_dept_salary_report(1, @cnt, @total, @avg, @top);
+SELECT @cnt AS EmployeeCount, @total AS TotalSalary, @avg AS AverageSalary, @top AS HighestEarner;
+
+
+DROP PROCEDURE IF EXISTS sp_give_raise;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_give_raise (
+    IN p_DepartmentId INT,
+    IN p_RaisePercent DECIMAL(5,2)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 'Error: raise could not be applied. Changes rolled back.' AS Message;
+    END;
+
+    IF p_RaisePercent <= 0 THEN
+        SELECT 'Error: raise percentage must be greater than 0.' AS Message;
+    ELSE
+        START TRANSACTION;
+
+        UPDATE Salaries s
+        JOIN Employees e ON s.EmployeeId = e.EmployeeId
+        SET s.SalaryAmount = s.SalaryAmount * (1 + p_RaisePercent / 100.0)
+        WHERE e.DepartmentId = p_DepartmentId
+          AND e.IsActive = 1;
+
+        COMMIT;
+        SELECT 'Raise applied successfully.' AS Message;
+    END IF;
+END //
+
+DELIMITER ;
+
+CALL sp_give_raise(1, 10);
+
+SELECT
+    e.FirstName,
+    e.LastName,
+    s.SalaryAmount,
+    s.SalaryType
+FROM Employees e
+JOIN Salaries s ON e.EmployeeId = s.EmployeeId
+WHERE e.DepartmentId = 1;
+
+
+DROP PROCEDURE IF EXISTS sp_print_employee_salaries;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_print_employee_salaries()
+BEGIN
+    DECLARE v_EmpId INT;
+    DECLARE v_FName VARCHAR(50);
+    DECLARE v_LName VARCHAR(50);
+    DECLARE v_Done INT DEFAULT 0;
+
+    DECLARE emp_cursor CURSOR FOR
+        SELECT EmployeeId, FirstName, LastName FROM Employees;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_Done = 1;
+
+    OPEN emp_cursor;
+
+    read_loop: LOOP
+        FETCH emp_cursor INTO v_EmpId, v_FName, v_LName;
+
+        IF v_Done = 1 THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT CONCAT(v_FName, ' ', v_LName, ' - Annual Salary: ', fn_annual_salary(v_EmpId)) AS Info;
+
+    END LOOP;
+
+    CLOSE emp_cursor;
+END //
+
+DELIMITER ;
+
+CALL sp_print_employee_salaries();

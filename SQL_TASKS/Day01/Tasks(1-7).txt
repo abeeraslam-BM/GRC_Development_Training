@@ -1,0 +1,70 @@
+
+USE abc_inc;
+
+SELECT
+    e.FirstName,
+    e.LastName,
+    d.DepartmentName,
+    s.SalaryAmount,
+    s.SalaryType
+FROM Employees e
+LEFT JOIN Departments d ON e.DepartmentId = d.DepartmentId
+LEFT JOIN Salaries s ON e.EmployeeId = s.EmployeeId;
+
+SELECT
+    d.DepartmentName,
+    COUNT(e.EmployeeId) AS NumberOfEmployees
+FROM Departments d
+LEFT JOIN Employees e ON d.DepartmentId = e.DepartmentId
+GROUP BY d.DepartmentName;
+
+SELECT
+    e.FirstName,
+    e.LastName,
+    d.DepartmentName,
+    e.HireDate
+FROM Employees e
+LEFT JOIN Departments d ON e.DepartmentId = d.DepartmentId
+LEFT JOIN ProjectAssignments pa ON e.EmployeeId = pa.EmployeeId
+WHERE pa.ProjectId IS NULL;
+
+SELECT
+    d.DepartmentName,
+    SUM(s.SalaryAmount) AS TotalSalary,
+    AVG(s.SalaryAmount) AS AverageSalary,
+    COUNT(s.SalaryId) AS NumberOfEmployees
+FROM Departments d
+JOIN Employees e ON d.DepartmentId = e.DepartmentId
+JOIN Salaries s ON e.EmployeeId = s.EmployeeId
+GROUP BY d.DepartmentName
+ORDER BY TotalSalary DESC;
+
+SELECT
+    e.FirstName AS EmployeeFirstName,
+    e.LastName AS EmployeeLastName,
+    m.FirstName AS ManagerFirstName,
+    m.LastName AS ManagerLastName
+FROM Employees e
+LEFT JOIN Employees m ON e.ManagerId = m.EmployeeId;
+
+SELECT
+    p.ProjectName,
+    COUNT(pa.EmployeeId) AS NumberOfEmployees,
+    SUM(pa.HoursLogged) AS TotalHours
+FROM Projects p
+JOIN ProjectAssignments pa ON p.ProjectId = pa.ProjectId
+GROUP BY p.ProjectName
+HAVING COUNT(pa.EmployeeId) > 3
+ORDER BY TotalHours DESC;
+
+SELECT
+    d.DepartmentName,
+    p.ProjectName,
+    COUNT(pa.AssignmentId) AS NumberOfEmployees
+FROM Departments d
+CROSS JOIN Projects p
+LEFT JOIN Employees e ON e.DepartmentId = d.DepartmentId
+LEFT JOIN ProjectAssignments pa
+    ON pa.ProjectId = p.ProjectId AND pa.EmployeeId = e.EmployeeId
+GROUP BY d.DepartmentName, p.ProjectName
+ORDER BY d.DepartmentName, p.ProjectName;

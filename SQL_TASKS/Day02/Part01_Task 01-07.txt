@@ -1,0 +1,101 @@
+-- Task 01 
+-- SELECT c.CustomerID, COUNT(o.OrderID) AS TotalOrders, COALESCE(SUM(p.Amount), 0) AS TotalAmountSpent
+-- FROM Customers c
+-- LEFT JOIN Orders o ON c.CustomerID = o.CustomerID
+-- LEFT JOIN Payments p ON o.OrderID = p.OrderID AND p.PaymentStatus = 'Paid'
+-- GROUP BY c.CustomerID;
+
+-- Task 02
+-- SELECT c.CustomerID, CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName, COUNT(o.OrderID) AS TotalOrders
+-- FROM Customers c
+-- JOIN Orders o ON c.CustomerID = o.CustomerID
+-- GROUP BY c.CustomerID
+-- HAVING COUNT(o.OrderID) > 3
+-- AND c.CustomerID IN (
+--     SELECT o.CustomerID
+--     FROM Orders o
+--     JOIN Payments p ON o.OrderID = p.OrderID
+--     WHERE p.PaymentStatus <> 'Paid'
+-- );
+
+-- TASK 3
+-- SELECT p.ProductID, p.ProductName, COUNT(DISTINCT o.CustomerID) AS DistinctCustomers, SUM(oi.Quantity) AS TotalUnitsSold, SUM(oi.Quantity * oi.UnitPrice) AS TotalRevenue
+-- FROM Products p
+-- INNER JOIN OrderItems oi ON p.ProductID = oi.ProductID
+-- INNER JOIN Orders o ON oi.OrderID = o.OrderID
+-- INNER JOIN Payments pay ON o.OrderID = pay.OrderID
+-- WHERE pay.PaymentStatus = 'Paid'
+-- GROUP BY p.ProductID, p.ProductName
+-- ORDER BY TotalRevenue DESC;
+
+-- TASK 4
+-- SELECT o.OrderID, o.OrderDate, p.PaymentStatus, p.PaymentDate,
+--     CASE
+--         WHEN p.PaymentStatus = 'Paid' AND p.PaymentDate IS NOT NULL
+--         THEN DATEDIFF(p.PaymentDate, o.OrderDate)
+--         ELSE NULL
+--     END AS DaysToPayment
+-- FROM Orders o
+-- LEFT JOIN Payments p ON o.OrderID = p.OrderID;
+
+-- TASK 5
+-- WITH ProductSales AS (
+--     SELECT c.CategoryID, c.CategoryName, p.ProductID, p.ProductName, SUM(oi.Quantity) AS TotalUnitsSold
+--     FROM Categories c
+--     INNER JOIN Products p ON c.CategoryID = p.CategoryID
+--     INNER JOIN OrderItems oi ON p.ProductID = oi.ProductID
+--     INNER JOIN Orders o ON oi.OrderID = o.OrderID
+--     INNER JOIN Payments pay ON o.OrderID = pay.OrderID
+--     WHERE pay.PaymentStatus = 'Paid'
+--     GROUP BY c.CategoryID, c.CategoryName, p.ProductID, p.ProductName
+-- ),
+-- RankedProducts AS (
+--     SELECT CategoryID, CategoryName, ProductID, ProductName, TotalUnitsSold,
+--         ROW_NUMBER() OVER ( 
+--             PARTITION BY CategoryID 
+--             ORDER BY TotalUnitsSold DESC
+--             ) AS ProductRank
+--     FROM ProductSales)
+-- SELECT CategoryName, ProductName, TotalUnitsSold, ProductRank 
+--     FROM RankedProducts
+--     WHERE ProductRank <= 3
+--     ORDER BY CategoryName, ProductRank;
+--     
+--     
+-- TASK 6
+-- WITH CustomerSpending AS (
+--     SELECT
+--         c.CustomerID, CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName, COALESCE(SUM(p.Amount), 0) AS TotalSpent
+--     FROM Customers c
+--     LEFT JOIN Orders o ON c.CustomerID = o.CustomerID
+--     LEFT JOIN Payments p ON o.OrderID = p.OrderID AND p.PaymentStatus = 'Paid'
+--     GROUP BY c.CustomerID, c.FirstName, c.LastName
+-- )
+-- SELECT
+--     CustomerID, CustomerName, TotalSpent,
+--     CASE
+--         WHEN TotalSpent > (SELECT AVG(TotalSpent) FROM CustomerSpending)
+--             THEN 'Above Average'
+--         WHEN TotalSpent = (SELECT AVG(TotalSpent) FROM CustomerSpending)
+--             THEN 'Average'
+--         ELSE 'Below Average'
+--     END AS SpendingCategory
+-- FROM CustomerSpending;
+
+
+-- TASK 7
+-- WITH MonthlyRevenue AS (
+--     SELECT DATE_FORMAT(o.OrderDate, '%Y-%m') AS RevenueMonth, SUM(p.Amount) AS MonthlyRevenue
+--     FROM Orders o 
+--     INNER JOIN Payments p ON o.OrderID = p.OrderID
+--     WHERE p.PaymentStatus = 'Paid' AND o.OrderDate >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+--     GROUP BY DATE_FORMAT(o.OrderDate, '%Y-%m')
+-- )
+-- SELECT
+--     RevenueMonth,
+--     MonthlyRevenue,
+--     SUM(MonthlyRevenue) OVER (
+--         ORDER BY RevenueMonth
+--     ) AS RunningTotal
+-- FROM MonthlyRevenue
+-- ORDER BY RevenueMonth;
