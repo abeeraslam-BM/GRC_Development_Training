@@ -1,59 +1,56 @@
 using Day1Task1.Data;
 using Day1Task1.Models;
+using Day1Task1.Exceptions;
 
 namespace Day1Task1.Services;
 
 public class BookService : IBookService
 {
-    public IEnumerable<Book> GetAll()
+    
+    public Task<List<Book>> GetAllAsync()
     {
-        return InMemoryStore.Books;
+        return Task.FromResult(InMemoryStore.Books);
+    }
+    public Task<Book?> GetByIdAsync(int id)
+    {
+    var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+    if (book == null)
+    {
+        throw new BookNotFoundException(id);
+    }
+    return Task.FromResult<Book?>(book);
     }
 
-    public Book? GetById(int id)
+    public Task<Book> CreateAsync(Book book)
     {
-        return InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+    book.Id =InMemoryStore.Books.Max(b => b.Id) + 1;
+
+    InMemoryStore.Books.Add(book);
+
+    return Task.FromResult(book);
     }
 
-    public Book Create(Book book)
+    public Task<Book?> UpdateAsync(int id, Book book)
     {
-        int nextId = InMemoryStore.Books.Count == 0
-            ? 1
-            : InMemoryStore.Books.Max(b => b.Id) + 1;
+         var existingBook =
+        InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
 
-        book.Id = nextId;
-        book.Author = InMemoryStore.Authors.FirstOrDefault(a => a.Id == book.AuthorId);
+    if (existingBook == null)
+        return Task.FromResult<Book?>(null);
 
-        InMemoryStore.Books.Add(book);
-        book.Author?.Books.Add(book);
+    existingBook.Title = book.Title;
 
-        return book;
+    return Task.FromResult<Book?>(existingBook);
     }
-
-    public bool Update(Book book)
+    public Task<bool> DeleteAsync(int id)
     {
-        var existing = GetById(book.Id);
-        if (existing is null)
-            return false;
+    var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
 
-        existing.Title = book.Title;
-        existing.Year = book.Year;
-        existing.PageCount = book.PageCount;
-        existing.AuthorId = book.AuthorId;
-        existing.Author = InMemoryStore.Authors.FirstOrDefault(a => a.Id == book.AuthorId);
+    if (book == null)
+        return Task.FromResult(false);
 
-        return true;
-    }
+    InMemoryStore.Books.Remove(book);
 
-    public bool Delete(int id)
-    {
-        var existing = GetById(id);
-        if (existing is null)
-            return false;
-
-        InMemoryStore.Books.Remove(existing);
-        existing.Author?.Books.Remove(existing);
-
-        return true;
+    return Task.FromResult(true);
     }
 }

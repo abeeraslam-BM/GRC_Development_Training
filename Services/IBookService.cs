@@ -4,9 +4,13 @@ namespace Day1Task1.Services;
 
 public interface IBookService
 {
-    IEnumerable<Book> GetAll();
-    Book? GetById(int id);
-    Book Create(Book book);
-    bool Update(Book book);
-    bool Delete(int id);
+    Task<List<Book>> GetAllAsync();
+
+    Task<Book?> GetByIdAsync(int id);
+
+    Task<Book> CreateAsync(Book book);
+
+    Task<Book?> UpdateAsync(int id, Book book);
+
+    Task<bool> DeleteAsync(int id);
 }
