@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
+using Day1Task1.DTOs;
 using Day1Task1.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Day1Task1.Controllers;
 
@@ -15,37 +16,51 @@ public class BooksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        string? author,
+        int page = 1,
+        int pageSize = 10)
     {
-        var books = await _bookService.GetAllAsync();
+        var books = await _bookService.GetAllAsync(author, page, pageSize);
 
-        var response = books.Select(b => new
-        {
-            b.Id,
-            b.Title,
-            b.Year,
-            b.PageCount,
-            AuthorName = b.Author.Name
-        });
-
-        return Ok(response);
+        return Ok(books);
     }
 
-
- [HttpGet("{id}")]
-public async Task<IActionResult> GetById(int id)
-{
-    var book = await _bookService.GetByIdAsync(id);
-
-    var response = new
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        book.Id,
-        book.Title,
-        book.Year,
-        book.PageCount,
-        AuthorName = book.Author.Name
-    };
+        var book = await _bookService.GetByIdAsync(id);
 
-    return Ok(response);
+        return Ok(book);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(BookCreateDTO dto)
+    {
+        var createdBook = await _bookService.CreateAsync(dto);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = createdBook.Id },
+            createdBook);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, BookUpdateDTO dto)
+    {
+        var updatedBook = await _bookService.UpdateAsync(id, dto);
+
+        return Ok(updatedBook);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted = await _bookService.DeleteAsync(id);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
 }
-      }

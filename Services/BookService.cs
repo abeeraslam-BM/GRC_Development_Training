@@ -1,56 +1,91 @@
 using Day1Task1.Data;
-using Day1Task1.Models;
+using Day1Task1.DTOs;
 using Day1Task1.Exceptions;
+using Day1Task1.Mappers;
 
 namespace Day1Task1.Services;
 
 public class BookService : IBookService
 {
-    
-    public Task<List<Book>> GetAllAsync()
+    public Task<List<BookResponseDTO>> GetAllAsync(string? author, int page, int pageSize)
     {
-        return Task.FromResult(InMemoryStore.Books);
+        var books = InMemoryStore.Books;
+
+        if (!string.IsNullOrWhiteSpace(author))
+        {
+            books = books
+                .Where(b => b.Author.Name.Contains(author))
+                .ToList();
+        }
+
+        books = books
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var response = books
+            .Select(b => BookMapper.ToResponse(b))
+            .ToList();
+
+        return Task.FromResult(response);
     }
-    public Task<Book?> GetByIdAsync(int id)
+
+    public Task<BookResponseDTO> GetByIdAsync(int id)
     {
-    var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
-    if (book == null)
+        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+
+        if (book == null)
+            throw new BookNotFoundException(id);
+
+        var response = BookMapper.ToResponse(book);
+
+        return Task.FromResult(response);
+    }
+
+    public Task<BookResponseDTO> CreateAsync(BookCreateDTO dto)
     {
-        throw new BookNotFoundException(id);
-    }
-    return Task.FromResult<Book?>(book);
+        var book = BookMapper.ToEntity(dto);
+
+        book.Id = InMemoryStore.Books.Max(b => b.Id) + 1;
+
+        InMemoryStore.Books.Add(book);
+
+        var response = BookMapper.ToResponse(book);
+
+        return Task.FromResult(response);
     }
 
-    public Task<Book> CreateAsync(Book book)
+    public Task<BookResponseDTO> UpdateAsync(int id, BookUpdateDTO dto)
     {
-    book.Id =InMemoryStore.Books.Max(b => b.Id) + 1;
+        try{
+        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
 
-    InMemoryStore.Books.Add(book);
+        if (book == null)
+            throw new BookNotFoundException(id);
 
-    return Task.FromResult(book);
+        BookMapper.ApplyUpdate(book, dto);
+
+        var response = BookMapper.ToResponse(book);
+
+        return Task.FromResult(response);
+        }
+        catch (BookNotFoundException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+
+            throw;
+        }
     }
 
-    public Task<Book?> UpdateAsync(int id, Book book)
-    {
-         var existingBook =
-        InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
-
-    if (existingBook == null)
-        return Task.FromResult<Book?>(null);
-
-    existingBook.Title = book.Title;
-
-    return Task.FromResult<Book?>(existingBook);
-    }
     public Task<bool> DeleteAsync(int id)
     {
-    var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
 
-    if (book == null)
-        return Task.FromResult(false);
+        if (book == null)
+            return Task.FromResult(false);
 
-    InMemoryStore.Books.Remove(book);
+        InMemoryStore.Books.Remove(book);
 
-    return Task.FromResult(true);
+        return Task.FromResult(true);
     }
 }

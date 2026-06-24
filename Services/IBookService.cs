@@ -1,16 +1,19 @@
-using Day1Task1.Models;
+using Day1Task1.DTOs;
 
 namespace Day1Task1.Services;
 
 public interface IBookService
 {
-    Task<List<Book>> GetAllAsync();
+    Task<List<BookResponseDTO>> GetAllAsync(
+        string? author,
+        int page,
+        int pageSize);
 
-    Task<Book?> GetByIdAsync(int id);
+    Task<BookResponseDTO> GetByIdAsync(int id);
 
-    Task<Book> CreateAsync(Book book);
+    Task<BookResponseDTO> CreateAsync(BookCreateDTO dto);
 
-    Task<Book?> UpdateAsync(int id, Book book);
+    Task<BookResponseDTO> UpdateAsync(int id, BookUpdateDTO dto);
 
     Task<bool> DeleteAsync(int id);
 }
