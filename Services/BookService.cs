@@ -1,91 +1,107 @@
-using Day1Task1.Data;
+using Day1Task1.Database;
 using Day1Task1.DTOs;
 using Day1Task1.Exceptions;
 using Day1Task1.Mappers;
+using Microsoft.EntityFrameworkCore;
 
 namespace Day1Task1.Services;
 
 public class BookService : IBookService
 {
-    public Task<List<BookResponseDTO>> GetAllAsync(string? author, int page, int pageSize)
+    private readonly AppDbContext _db;
+
+    public BookService(AppDbContext db)
     {
-        var books = InMemoryStore.Books;
+        _db = db;
+    }
+
+    public async Task<List<BookResponseDTO>> GetAllAsync(
+        string? author,
+        int page,
+        int pageSize)
+    {
+        var query = _db.Books
+            .Include(b => b.Author)
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(author))
         {
-            books = books
-                .Where(b => b.Author.Name.Contains(author))
-                .ToList();
+            query = query.Where(b =>
+                b.Author.Name.Contains(author));
         }
 
-        books = books
+        var books = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync();
 
-        var response = books
-            .Select(b => BookMapper.ToResponse(b))
+        return books
+            .Select(BookMapper.ToResponse)
             .ToList();
-
-        return Task.FromResult(response);
     }
 
-    public Task<BookResponseDTO> GetByIdAsync(int id)
+    public async Task<BookResponseDTO> GetByIdAsync(int id)
     {
-        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+        var book = await _db.Books
+            .Include(b => b.Author)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == id);
 
         if (book == null)
             throw new BookNotFoundException(id);
 
-        var response = BookMapper.ToResponse(book);
-
-        return Task.FromResult(response);
+        return BookMapper.ToResponse(book);
     }
 
-    public Task<BookResponseDTO> CreateAsync(BookCreateDTO dto)
+    public async Task<BookResponseDTO> CreateAsync(BookCreateDTO dto)
     {
         var book = BookMapper.ToEntity(dto);
 
-        book.Id = InMemoryStore.Books.Max(b => b.Id) + 1;
+        _db.Books.Add(book);
 
-        InMemoryStore.Books.Add(book);
+        await _db.SaveChangesAsync();
 
-        var response = BookMapper.ToResponse(book);
+        var createdBook = await _db.Books
+            .Include(b => b.Author)
+            .AsNoTracking()
+            .FirstAsync(b => b.Id == book.Id);
 
-        return Task.FromResult(response);
+        return BookMapper.ToResponse(createdBook);
     }
 
-    public Task<BookResponseDTO> UpdateAsync(int id, BookUpdateDTO dto)
+    public async Task<BookResponseDTO> UpdateAsync(int id, BookUpdateDTO dto)
     {
-        try{
-        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+        var book = await _db.Books
+            .FirstOrDefaultAsync(b => b.Id == id);
 
         if (book == null)
             throw new BookNotFoundException(id);
 
         BookMapper.ApplyUpdate(book, dto);
 
-        var response = BookMapper.ToResponse(book);
+        await _db.SaveChangesAsync();
 
-        return Task.FromResult(response);
-        }
-        catch (BookNotFoundException ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
+        var updatedBook = await _db.Books
+            .Include(b => b.Author)
+            .AsNoTracking()
+            .FirstAsync(b => b.Id == id);
 
-            throw;
-        }
+        return BookMapper.ToResponse(updatedBook);
     }
 
-    public Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var book = InMemoryStore.Books.FirstOrDefault(b => b.Id == id);
+        var book = await _db.Books
+            .FirstOrDefaultAsync(b => b.Id == id);
 
         if (book == null)
-            return Task.FromResult(false);
+            return false;
 
-        InMemoryStore.Books.Remove(book);
+        _db.Books.Remove(book);
 
-        return Task.FromResult(true);
+        await _db.SaveChangesAsync();
+
+        return true;
     }
 }

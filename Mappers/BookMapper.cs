@@ -1,6 +1,5 @@
 using Day1Task1.DTOs;
 using Day1Task1.Models;
-using Day1Task1.Data;
 
 namespace Day1Task1.Mappers;
 
@@ -14,7 +13,6 @@ public static class BookMapper
             Year = dto.Year,
             PageCount = dto.PageCount,
             AuthorId = dto.AuthorId,
-            Author = InMemoryStore.Authors.First(a => a.Id == dto.AuthorId)
         };
     }
 
@@ -24,7 +22,6 @@ public static class BookMapper
         book.Year = dto.Year;
         book.PageCount = dto.PageCount;
         book.AuthorId = dto.AuthorId;
-        book.Author = InMemoryStore.Authors.First(a => a.Id == dto.AuthorId);
     }
 
     public static BookResponseDTO ToResponse(Book book)

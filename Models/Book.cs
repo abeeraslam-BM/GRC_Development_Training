@@ -6,6 +6,7 @@ namespace Day1Task1.Models
         public string Title { get; set; }=string.Empty;
         public int Year { get; set; }
         public int PageCount { get; set; }
+        public string Isbn { get; set; } = string.Empty;
         public int AuthorId { get; set; }
         public Author? Author { get; set; }
     }

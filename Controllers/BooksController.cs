@@ -1,9 +1,12 @@
 using Day1Task1.DTOs;
 using Day1Task1.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace Day1Task1.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/books")]
 public class BooksController : ControllerBase
@@ -52,7 +55,7 @@ public class BooksController : ControllerBase
 
         return Ok(updatedBook);
     }
-
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
